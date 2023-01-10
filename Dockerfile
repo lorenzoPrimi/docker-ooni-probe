@@ -1,34 +1,21 @@
 # syntax=docker/dockerfile:1
 
-FROM alpine:3.16 as builder
+FROM debian:11.6-slim
 
-LABEL org.opencontainers.image.source=https://github.com/altertek/docker-ooni-probe
-LABEL org.opencontainers.image.authors=Altertek
+LABEL org.opencontainers.image.source=https://github.com/lorenzoPrimi/docker-ooni-probe
+LABEL org.opencontainers.image.authors=LorenzoPrimiterra
 
-ARG PROBEVERSION=v3.16.5
-ARG TARGETPLATFORM
-ENV TARGETPLATFORM=${TARGETPLATFORM:-"linux/amd64"}
+RUN apt-get update && apt-get install -y gnupg
 
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+RUN apt-key adv --verbose --keyserver hkp://keyserver.ubuntu.com --recv-keys 'B5A08F01796E7F521861B449372D1FF271F2DD50'
 
-RUN apk add --no-cache wget \
-    && ARCH=$(echo $TARGETPLATFORM | tr / -) \
-    && wget -q --output-document=/root/probe.bin \
-	"https://github.com/ooni/probe-cli/releases/download/$PROBEVERSION/ooniprobe-$ARCH" \
-    && chmod +x /root/probe.bin
+RUN echo "deb http://deb.ooni.org/ unstable main" | tee /etc/apt/sources.list.d/ooniprobe.list
 
-FROM alpine:3.16
+RUN apt-get update && apt-get install -y ooniprobe-cli
 
-ARG USER=default
-ENV HOME /home/$USER
-
-COPY --from=builder /root/probe.bin /usr/bin/ooniprobe
-
-RUN adduser -D -g $USER $USER \
-    && chown -R $USER:$USER $HOME
+ARG USER=ooniprobe
 
 USER $USER
-WORKDIR $HOME
 
 RUN /usr/bin/ooniprobe onboard --yes
 
