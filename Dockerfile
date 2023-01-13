@@ -13,6 +13,10 @@ RUN echo "deb http://deb.ooni.org/ unstable main" | tee /etc/apt/sources.list.d/
 
 RUN apt-get update && apt-get install -y ooniprobe-cli
 
+RUN apt-get install -y unattended-upgrades apt-listchanges
+
+RUN sed -i '/Unattended-Upgrade::Origins-Pattern {/a "origin=ooni";' /etc/apt/apt.conf.d/50unattended-upgrades
+
 ARG USER=ooniprobe
 
 USER $USER
